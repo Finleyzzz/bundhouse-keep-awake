@@ -1,0 +1,29 @@
+name: ping
+on:
+  schedule:
+    - cron: "*/10 0-15 * * *"   # every 10 min, 07:00–22:59 Jakarta (UTC+7)
+    - cron: "17 3 1 * *"        # monthly: keeps this repo "active" so GitHub keeps the schedule on
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Wake / keep awake
+        run: |
+          for i in 1 2 3 4; do
+            curl -fsS --max-time 70 https://menu-arrangement.onrender.com/api/health && exit 0
+            sleep 15
+          done
+          exit 1
+  heartbeat:
+    if: github.event.schedule == '17 3 1 * *'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          date -u +%Y-%m-%dT%H:%MZ > last-heartbeat.txt
+          git config user.name "keep-awake"; git config user.email "keep-awake@users.noreply.github.com"
+          git add last-heartbeat.txt && git commit -m "monthly heartbeat" && git push
